@@ -3,6 +3,9 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import bodyParser from "body-parser"
 import { connectToMongoDB } from "./db/connectToMongoDB.js";
+import messageRoutes from "./routes/message.routes.js";
+
+
 
 dotenv.config();
 
@@ -18,6 +21,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth",authRoutes)
+
+app.use("/api/message",messageRoutes)
 
 app.listen(PORT, () => {
   connectToMongoDB()

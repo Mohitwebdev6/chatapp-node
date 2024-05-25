@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import generateTokenAndSetCookie from "../utils/generateToken.js";
 
 export const signup = async (req, res) => {
   try {
@@ -31,18 +32,19 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
+      generateTokenAndSetCookie(newUser._id, res);
+
       await newUser.save();
 
       return res.status(201).json({
-        _id: user._id,
-        username: user.username,
-        fullName: user.fullName,
-        gender: user.gender,
-        profilePic: user.profilePic,
+        _id: newUser._id,
+        username: newUser.username,
+        fullName: newUser.fullName,
+        gender: newUser.gender,
+        profilePic: newUser.profilePic,
       });
-    }
-    else{
-        return res.status(401).json({message:"Invalid credentials"})
+    } else {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
   } catch (error) {
     console.log("Error in signup controller", error.message);
@@ -50,10 +52,42 @@ export const signup = async (req, res) => {
   }
 };
 
-export const login = (req, res) => {
-  res.send("Login");
+export const login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    console.log(username,password)
+    const user = await User.findOne({ username });
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user?.password || ""
+    );
+    if (!user || !isPasswordCorrect) {
+      res.status(400).json({message:"Invalid username or password"});
+    }
+
+    generateTokenAndSetCookie(user._id,res)
+
+    res.status(200).json({
+      fullName:user.fullName,
+      username:user.username,
+      gender:user.gender,
+      profilePic:user.profilePic
+    })
+  } catch (error) {
+    console.log("Error in login controller", error.message);
+    return res.status(500).json({ message: "Internal server errror" });
+  }
 };
 
-export const logout = (req, res) => {
-  res.send("Logout");
+export const logout =async (req, res) => {
+  try{
+    res.cookie("jwt","",{maxAge:0})
+
+    res.status(200).json({
+      message:"logout successfully"
+    })
+  }catch{
+    console.log("Error in logout controller", error.message);
+    return res.status(500).json({ message: "Internal server errror" });
+  }
 };
